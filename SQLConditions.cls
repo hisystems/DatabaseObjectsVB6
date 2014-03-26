@@ -35,12 +35,39 @@ Public Function Add( _
     
     Set Add.Table = objTable
     Add.FieldName = strFieldName
-    Add.compare = eCompare
+    Add.Compare = eCompare
     If Not IsMissing(vValue) Then Add.Value = vValue
 
     pcolSQLConditions.Add Add
 
 End Function
+
+Public Sub AddExpression(ByVal objExpression As ISQLExpression)
+
+    If objExpression Is Nothing Then
+        RaiseError dboErrorObjectIsNothing
+    End If
+    
+    EnsurePreviousLogicalOperatorExists
+    pcolSQLConditions.Add objExpression
+
+End Sub
+
+Public Sub AddCompareExpression( _
+    ByVal objLeft As ISQLExpression, _
+    ByVal eCompare As SQLComparisonOperatorEnum, _
+    ByVal objRightExpression As ISQLExpression)
+    
+    Dim objCompareExpression As SQLComparisonExpression
+    Set objCompareExpression = New SQLComparisonExpression
+    
+    Set objCompareExpression.Left = objLeft
+    objCompareExpression.Compare = eCompare
+    Set objCompareExpression.Right = objRightExpression
+    
+    AddExpression objCompareExpression
+    
+End Sub
 
 Public Sub AddCondition( _
     ByVal objCondition As SQLCondition)
@@ -91,7 +118,7 @@ Public Function AddSelect( _
     
     Set AddSelect = New SQLConditionSelect
     Set AddSelect.SelectSet = objSelect
-    AddSelect.compare = eCompare
+    AddSelect.Compare = eCompare
     If Not IsMissing(vValue) Then AddSelect.Value = vValue
     
     pcolSQLConditions.Add AddSelect
@@ -112,7 +139,7 @@ Public Function AddFieldCompare( _
     With AddFieldCompare
         Set .Table1 = objTable1
         .FieldName1 = strFieldName1
-        .compare = eCompare
+        .Compare = eCompare
         Set .Table2 = objTable2
         .FieldName2 = strFieldName2
     End With
@@ -163,6 +190,7 @@ Friend Property Get SQL(ByVal eConnectionType As ConnectionTypeEnum) As String
     Dim objSelectIn As SQLConditionInSelect
     Dim objSelect As SQLConditionSelect
     Dim objFields As SQLConditionFieldCompare
+    Dim objExpression As ISQLExpression
     
     With pcolSQLConditions
         For intIndex = 1 To .Count
@@ -184,6 +212,9 @@ Friend Property Get SQL(ByVal eConnectionType As ConnectionTypeEnum) As String
             ElseIf TypeOf .Item(intIndex) Is SQLConditionInSelect Then
                 Set objSelectIn = .Item(intIndex)
                 strSQL = strSQL & objSelectIn.SQL(eConnectionType)
+            ElseIf TypeOf .Item(intIndex) Is ISQLExpression Then
+                Set objExpression = .Item(intIndex)
+                strSQL = strSQL & objExpression.SQL(eConnectionType)
             End If
         Next
     End With
