@@ -707,11 +707,6 @@ Private Function FieldValuesFromRecordSet( _
     Dim intIndex As Integer
     Dim strTablePrefix As String
     Dim objFieldValues As SQLFieldValues
-     
-    'check that the distinct field name exists
-    If Not FieldExists(rsSource, objCollection.DistinctFieldName) Then
-        RaiseError dboErrorGeneral, "DistinctFieldName '" & objCollection.DistinctFieldName & "' is invalid."
-    End If
 
     If rsSource.EOF Then
         RaiseError dboErrorGeneral, "Object could not be loaded from the RecordSet. Recordset is EOF."
@@ -719,6 +714,11 @@ Private Function FieldValuesFromRecordSet( _
 
     Set objFieldValues = New SQLFieldValues
     strTablePrefix = objCollection.TableName & "."
+
+    'check that the distinct field name exists
+    If Not FieldExists(rsSource, objCollection.DistinctFieldName) And Not FieldExists(rsSource, strTablePrefix & objCollection.DistinctFieldName) Then
+        RaiseError dboErrorGeneral, "DistinctFieldName '" & objCollection.DistinctFieldName & "' is invalid."
+    End If
 
     'copy the recordset values into the SQLFieldValues object
     For intIndex = 0 To rsSource.Fields.Count - 1
